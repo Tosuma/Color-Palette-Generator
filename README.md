@@ -13,7 +13,8 @@ A small, dependency-free color palette generator that runs in the browser. Gener
 - **Lock colors**: locked colors keep their value when you generate new ones.
 - **Copy to clipboard**: copy any color's hex code with one click.
 - **Reorder**: drag a color by its handle, or use the ← / → buttons, to see how colors look next to each other.
-- **Remembers your palette**: colors, lock states, view mode and grid size are saved in `localStorage`.
+- **Light or dark background**: switch with the **Dark** / **Light** button. The first time you open the app, it follows your system setting.
+- **Remembers your palette**: colors, lock states, view mode, grid size, harmony settings and theme are saved in `localStorage`.
 
 All colors are shown as uppercase hex (`#RRGGBB`).
 

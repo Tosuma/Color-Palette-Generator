@@ -15,6 +15,8 @@ const ICONS = {
   unlocked: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
   picker: '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h2"/>',
   delete: '<path d="M18 6L6 18M6 6l12 12"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
 };
 
 // ---------- Color helpers ----------
@@ -164,6 +166,11 @@ function createColor(hex) {
   return { id: nextId++, hex, locked: false };
 }
 
+// index.html sets the theme before first paint (saved choice, else the system setting).
+function initialTheme() {
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
 function defaultState() {
   return {
     colors: generateColors({ count: DEFAULT_COUNT, harmony: 'random' }).map(createColor),
@@ -171,6 +178,7 @@ function defaultState() {
     gridCols: 3,
     harmony: 'random',
     matchLocked: false,
+    theme: initialTheme(),
   };
 }
 
@@ -190,6 +198,7 @@ function load() {
       gridCols: clamp(Number(saved.gridCols) || 3, MIN_GRID_COLS, MAX_GRID_COLS),
       harmony: Object.hasOwn(HARMONIES, saved.harmony) ? saved.harmony : 'random',
       matchLocked: Boolean(saved.matchLocked),
+      theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : initialTheme(),
     };
   } catch {
     return defaultState();
@@ -206,6 +215,7 @@ function save() {
         gridCols: state.gridCols,
         harmony: state.harmony,
         matchLocked: state.matchLocked,
+        theme: state.theme,
       })
     );
   } catch {
@@ -263,6 +273,11 @@ function addColor() {
 
 function setHarmony(harmony) {
   state.harmony = harmony;
+  render();
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
   render();
 }
 
@@ -334,6 +349,7 @@ const gridSizeValue = document.getElementById('grid-size-value');
 const toastEl = document.getElementById('toast');
 const harmonySelect = document.getElementById('harmony');
 const matchLockedInput = document.getElementById('match-locked');
+const themeBtn = document.getElementById('theme');
 
 function icon(name) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -377,6 +393,10 @@ function render() {
   gridSizeValue.textContent = state.gridCols;
   harmonySelect.value = state.harmony;
   matchLockedInput.checked = state.matchLocked;
+  document.documentElement.dataset.theme = state.theme;
+  const isDark = state.theme === 'dark';
+  themeBtn.innerHTML = `${icon(isDark ? 'sun' : 'moon')}<span>${isDark ? 'Light' : 'Dark'}</span>`;
+  themeBtn.title = `Switch to ${isDark ? 'light' : 'dark'} background`;
   addBtn.disabled = state.colors.length >= MAX_COLORS;
   generateBtn.disabled = state.colors.every((c) => c.locked);
 
@@ -400,6 +420,7 @@ function swatchIdFrom(el) {
 
 generateBtn.addEventListener('click', generate);
 addBtn.addEventListener('click', addColor);
+themeBtn.addEventListener('click', toggleTheme);
 
 document.querySelectorAll('.seg-btn').forEach((btn) => {
   btn.addEventListener('click', () => setView(btn.dataset.view));

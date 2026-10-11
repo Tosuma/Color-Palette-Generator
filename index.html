@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Color Palette Generator</title>
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Apply the theme before first paint to avoid a light flash in dark mode.
+    (function () {
+      let theme;
+      try { theme = JSON.parse(localStorage.getItem('palette-generator-state')).theme; } catch {}
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
 </head>
 <body>
   <header class="toolbar">
@@ -48,6 +59,8 @@
     </div>
 
     <p class="hint">Press <kbd>Space</kbd> to generate</p>
+
+    <button id="theme" class="btn theme-btn" aria-label="Toggle dark background"></button>
   </header>
 
   <main id="palette" class="palette"></main>

@@ -9,7 +9,26 @@
   --muted: #6e6e73;
   --border: #d2d2d7;
   --accent: #1d1d1f;
+  --accent-hover: #3a3a3c;
+  --on-accent: #ffffff;
+  --toast-bg: #1d1d1f;
+  --toast-text: #ffffff;
   --cols: 3;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --text: #f5f5f7;
+  --muted: #98989d;
+  --border: #3a3a3c;
+  --accent: #f5f5f7;
+  --accent-hover: #d2d2d7;
+  --on-accent: #1d1d1f;
+  --toast-bg: #f5f5f7;
+  --toast-text: #1d1d1f;
+  color-scheme: dark;
 }
 
 html,
@@ -89,11 +108,27 @@ kbd {
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #3a3a3c;
+  background: var(--accent-hover);
+}
+
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .segmented {
@@ -119,7 +154,7 @@ kbd {
 
 .seg-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .grid-size {
@@ -199,6 +234,7 @@ kbd {
 
 .toggle input:checked + .toggle-track::after {
   transform: translateX(16px);
+  background: var(--on-accent);
 }
 
 .toggle input:focus-visible + .toggle-track {
@@ -252,6 +288,10 @@ kbd {
 
   .hint {
     display: none;
+  }
+
+  .theme-btn {
+    margin-left: auto;
   }
 }
 
@@ -401,8 +441,8 @@ kbd {
   bottom: 24px;
   padding: 10px 18px;
   border-radius: 999px;
-  background: #1d1d1f;
-  color: #fff;
+  background: var(--toast-bg);
+  color: var(--toast-text);
   font-size: 0.9rem;
   pointer-events: none;
   opacity: 0;
