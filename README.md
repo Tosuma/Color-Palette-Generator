@@ -4,7 +4,9 @@ A small, dependency-free color palette generator that runs in the browser. Gener
 
 ## Features
 
-- **Generate new colors**: click **Try new colors** or press <kbd>Space</kbd> to reroll every unlocked color. Saturation and lightness stay in a range that avoids muddy or neon colors.
+- **Generate new colors**: click **Try new colors** or press <kbd>Space</kbd> to reroll every unlocked color. Saturation and lightness stay in a range that avoids muddy or neon colors, and no two colors come out looking almost the same.
+- **Color harmonies**: choose **Random**, **Analogous**, **Complementary**, **Split complementary**, **Triadic**, **Tetradic** or **Monochrome** to control how the hues relate to each other.
+- **Match locked colors**: when this is on, new colors are built around the first locked color, so the palette fits the color you chose. With **Random** selected, the hues are spread evenly around the color wheel starting from that color. When it's off, each generation starts from a random hue.
 - **Two view modes**: **Columns** (full-height strips) or **Grid**, with a slider for how many colors go in each row (1–8).
 - **Add and remove colors**: up to 20 colors, down to a minimum of 1.
 - **Set an exact hex value**: click a color's hex code and type a new one (`#3A7BD5`, `3a7bd5` or shorthand `#3ad`), then press <kbd>Enter</kbd>. <kbd>Esc</kbd> cancels, and invalid input goes back to the previous value. You can also use the built-in color picker.

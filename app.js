@@ -33,9 +33,107 @@ function hslToHex(h, s, l) {
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`.toUpperCase();
 }
 
-// Random hue, but saturation/lightness kept in a range that avoids muddy or neon colors.
-function randomPleasantHex() {
-  return hslToHex(randomBetween(0, 360), randomBetween(45, 85), randomBetween(35, 75));
+function wrapHue(h) {
+  return ((h % 360) + 360) % 360;
+}
+
+function hexToRgb(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+function hexToHue(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  if (d === 0) return 0;
+  let h;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return wrapHue(h * 60);
+}
+
+// sRGB -> CIELAB (D65), used to measure how different two colors look.
+function hexToLab(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => {
+    v /= 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+  const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+  const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+}
+
+function colorDistance(hexA, hexB) {
+  const [l1, a1, b1] = hexToLab(hexA);
+  const [l2, a2, b2] = hexToLab(hexB);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
+// ---------- Generation ----------
+
+// Hue offsets (degrees) from the base hue. `null` means each hue is picked freely.
+const HARMONIES = {
+  random: null,
+  analogous: [0, 30, -30, 60, -60],
+  complementary: [0, 180],
+  'split-complementary': [0, 150, 210],
+  triadic: [0, 120, 240],
+  tetradic: [0, 90, 180, 270],
+  monochrome: [0],
+};
+
+const MIN_DISTANCE = 18; // CIELAB ΔE: below this, two colors look nearly the same
+const MAX_ATTEMPTS = 40;
+
+// Saturation/lightness are kept in a range that avoids muddy or neon colors.
+function candidateHex(hue, harmony) {
+  if (harmony === 'monochrome') {
+    return hslToHex(wrapHue(hue + randomBetween(-6, 6)), randomBetween(35, 80), randomBetween(20, 85));
+  }
+  const h = hue === null ? randomBetween(0, 360) : hue + randomBetween(-12, 12);
+  return hslToHex(wrapHue(h), randomBetween(45, 85), randomBetween(35, 75));
+}
+
+// Tries candidates until one is far enough from every existing color; otherwise keeps the most distinct one.
+function pickDistinct(makeCandidate, existing) {
+  let best = null;
+  let bestDistance = -1;
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const hex = makeCandidate();
+    const distance = Math.min(Infinity, ...existing.map((e) => colorDistance(hex, e)));
+    if (distance >= MIN_DISTANCE) return hex;
+    if (distance > bestDistance) {
+      best = hex;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+/**
+ * Generates `count` new hex colors.
+ * - fixed: colors that stay in the palette; new colors avoid looking like them.
+ * - baseHue: hue the harmony is built from.
+ * - firstStep: which harmony offset the first new color uses (an anchor color occupies step 0).
+ * - anchored: whether baseHue comes from an existing color. In "random" mode this spreads
+ *   hues evenly around the wheel from the anchor instead of picking them freely.
+ * - total: palette size, used for the even spread.
+ */
+function generateColors({ count, harmony, fixed = [], baseHue = randomBetween(0, 360), firstStep = 0, anchored = false, total = count }) {
+  const offsets = HARMONIES[harmony] ?? (anchored ? Array.from({ length: total }, (_, j) => (j * 360) / total) : null);
+  const existing = [...fixed];
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const step = firstStep + i;
+    const hue = offsets ? baseHue + offsets[step % offsets.length] : null;
+    const hex = pickDistinct(() => candidateHex(hue, harmony), existing);
+    existing.push(hex);
+    result.push(hex);
+  }
+  return result;
 }
 
 // Accepts "#abc", "abc", "#aabbcc", "aabbcc"; returns "#AABBCC" or null.
@@ -62,15 +160,17 @@ function getContrastText(hex) {
 
 let nextId = 1;
 
-function createColor(hex = randomPleasantHex()) {
+function createColor(hex) {
   return { id: nextId++, hex, locked: false };
 }
 
 function defaultState() {
   return {
-    colors: Array.from({ length: DEFAULT_COUNT }, () => createColor()),
+    colors: generateColors({ count: DEFAULT_COUNT, harmony: 'random' }).map(createColor),
     view: 'columns',
     gridCols: 3,
+    harmony: 'random',
+    matchLocked: false,
   };
 }
 
@@ -88,6 +188,8 @@ function load() {
       colors,
       view: saved.view === 'grid' ? 'grid' : 'columns',
       gridCols: clamp(Number(saved.gridCols) || 3, MIN_GRID_COLS, MAX_GRID_COLS),
+      harmony: Object.hasOwn(HARMONIES, saved.harmony) ? saved.harmony : 'random',
+      matchLocked: Boolean(saved.matchLocked),
     };
   } catch {
     return defaultState();
@@ -102,6 +204,8 @@ function save() {
         colors: state.colors.map(({ hex, locked }) => ({ hex, locked })),
         view: state.view,
         gridCols: state.gridCols,
+        harmony: state.harmony,
+        matchLocked: state.matchLocked,
       })
     );
   } catch {
@@ -117,16 +221,53 @@ const state = load();
 
 // ---------- Actions ----------
 
+// The first locked color (in palette order) is the anchor when "Match locked colors" is on.
+function anchorColor() {
+  return state.matchLocked ? state.colors.find((c) => c.locked) ?? null : null;
+}
+
 function generate() {
-  state.colors.forEach((c) => {
-    if (!c.locked) c.hex = randomPleasantHex();
+  const unlocked = state.colors.filter((c) => !c.locked);
+  const anchor = anchorColor();
+  const hexes = generateColors({
+    count: unlocked.length,
+    harmony: state.harmony,
+    fixed: state.colors.filter((c) => c.locked).map((c) => c.hex),
+    baseHue: anchor ? hexToHue(anchor.hex) : undefined,
+    firstStep: anchor ? 1 : 0,
+    anchored: Boolean(anchor),
+    total: state.colors.length,
+  });
+  unlocked.forEach((c, i) => {
+    c.hex = hexes[i];
   });
   render();
 }
 
+// A new color continues the current harmony, built from the anchor or else the first color.
 function addColor() {
   if (state.colors.length >= MAX_COLORS) return;
-  state.colors.push(createColor());
+  const anchor = anchorColor();
+  const [hex] = generateColors({
+    count: 1,
+    harmony: state.harmony,
+    fixed: state.colors.map((c) => c.hex),
+    baseHue: hexToHue((anchor ?? state.colors[0]).hex),
+    firstStep: state.colors.length,
+    anchored: Boolean(anchor),
+    total: state.colors.length + 1,
+  });
+  state.colors.push(createColor(hex));
+  render();
+}
+
+function setHarmony(harmony) {
+  state.harmony = harmony;
+  render();
+}
+
+function setMatchLocked(on) {
+  state.matchLocked = on;
   render();
 }
 
@@ -191,6 +332,8 @@ const gridSizeWrap = document.getElementById('grid-size-wrap');
 const gridSizeInput = document.getElementById('grid-size');
 const gridSizeValue = document.getElementById('grid-size-value');
 const toastEl = document.getElementById('toast');
+const harmonySelect = document.getElementById('harmony');
+const matchLockedInput = document.getElementById('match-locked');
 
 function icon(name) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -232,6 +375,8 @@ function render() {
   gridSizeWrap.hidden = state.view !== 'grid';
   gridSizeInput.value = state.gridCols;
   gridSizeValue.textContent = state.gridCols;
+  harmonySelect.value = state.harmony;
+  matchLockedInput.checked = state.matchLocked;
   addBtn.disabled = state.colors.length >= MAX_COLORS;
   generateBtn.disabled = state.colors.every((c) => c.locked);
 
@@ -261,11 +406,13 @@ document.querySelectorAll('.seg-btn').forEach((btn) => {
 });
 
 gridSizeInput.addEventListener('input', () => setGridCols(Number(gridSizeInput.value)));
+harmonySelect.addEventListener('change', () => setHarmony(harmonySelect.value));
+matchLockedInput.addEventListener('change', () => setMatchLocked(matchLockedInput.checked));
 
 document.addEventListener('keydown', (e) => {
   if (e.code !== 'Space') return;
   const tag = e.target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || e.target.isContentEditable) return;
+  if (['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(tag) || e.target.isContentEditable) return;
   e.preventDefault();
   generate();
 });
