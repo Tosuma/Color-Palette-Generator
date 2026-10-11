@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Palette Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <h1 class="title">Palette</h1>
+
+    <div class="toolbar-group">
+      <button id="generate" class="btn btn-primary" title="Generate new colors (Space)">Try new colors</button>
+      <button id="add" class="btn">+ Add color</button>
+    </div>
+
+    <div class="toolbar-group">
+      <div class="segmented" role="group" aria-label="View mode">
+        <button class="seg-btn" data-view="columns">Columns</button>
+        <button class="seg-btn" data-view="grid">Grid</button>
+      </div>
+      <label id="grid-size-wrap" class="grid-size">
+        Columns per row
+        <input id="grid-size" type="range" min="1" max="8" step="1" />
+        <span id="grid-size-value"></span>
+      </label>
+    </div>
+
+    <p class="hint">Press <kbd>Space</kbd> to generate</p>
+  </header>
+
+  <main id="palette" class="palette"></main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

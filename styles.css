@@ -1,0 +1,344 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #1d1d1f;
+  --cols: 3;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- Toolbar ---------- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  margin: 0 0 0 auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  background: var(--bg);
+}
+
+.btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3a3a3c;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  padding: 8px 14px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.seg-btn + .seg-btn {
+  border-left: 1px solid var(--border);
+}
+
+.seg-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.grid-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.grid-size[hidden] {
+  display: none;
+}
+
+#grid-size-value {
+  min-width: 1ch;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ---------- Palette ---------- */
+
+.palette {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.palette.view-columns {
+  display: flex;
+}
+
+.palette.view-columns .swatch {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.palette.view-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-auto-rows: minmax(160px, 1fr);
+  gap: 12px;
+  padding: 12px;
+}
+
+.palette.view-grid .swatch {
+  border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+  .palette.view-columns {
+    flex-direction: column;
+  }
+
+  .palette.view-columns .swatch {
+    min-height: 120px;
+  }
+
+  .hint {
+    display: none;
+  }
+}
+
+/* ---------- Swatch ---------- */
+
+.swatch {
+  --fg: #000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 8px;
+  color: var(--fg);
+  transition: background-color 0.25s ease, opacity 0.15s ease;
+}
+
+.swatch.dragging {
+  opacity: 0.4;
+}
+
+.swatch.drop-target {
+  outline: 3px dashed var(--fg);
+  outline-offset: -8px;
+}
+
+.swatch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.swatch:hover .swatch-actions,
+.swatch:focus-within .swatch-actions,
+.swatch.is-locked .swatch-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .swatch-actions {
+    opacity: 1;
+  }
+}
+
+/* Locked swatches only keep the lock button visible when not hovered */
+.swatch.is-locked:not(:hover):not(:focus-within) .icon-btn:not([data-action="lock"]) {
+  visibility: hidden;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-btn[data-action="drag"] {
+  cursor: grab;
+}
+
+.icon-btn[data-action="drag"]:active {
+  cursor: grabbing;
+}
+
+.picker-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.picker-btn input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.hex-input {
+  width: 100%;
+  max-width: 9ch;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hex-input:hover {
+  border-bottom-color: color-mix(in srgb, var(--fg) 30%, transparent);
+}
+
+.hex-input:focus {
+  outline: none;
+  border-bottom-color: var(--fg);
+}
+
+.hex-input.invalid {
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* ---------- Toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 0.9rem;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
